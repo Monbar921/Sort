@@ -1,6 +1,7 @@
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -20,36 +21,97 @@ public class Sort {
     System.out.println(arg.sort_method + " " + arg.kind_of_data + " " + arg.output_file);
   }
 
-  public static void merge_sort(ArrayList<ReadFile> input_files, CommandArguments arg) throws IOException {
-    if (arg.kind_of_data.equals("i")) {
-      if (arg.sort_method.equals("a")) {
-        int current_line = 0;
-        int max_line = find_max_value(input_files);
-        System.out.println(max_line);
-        System.out.println(input_files.get(0).sorted_file);
+  public static void merge_sort(ArrayList<ReadFile> input_files, CommandArguments arg)
+      throws IOException {
 
-//        try(FileInputStream fis = new FileInputStream(this.sorted_file); BufferedReader br = new BufferedReader(new InputStreamReader(fis))){
-//          String line;
-//          System.out.println(this.sorted_file);
-//          while ((line = br.readLine()) != null) {
-//            this.number_of_lines++;
-//          }
-//        }
+    if (input_files.size() > 1) {
+      String temp_result = "./src/temp_";
+      for (int i = 0; i < input_files.size() - 1; i++) {
+
+        try (BufferedReader bf1 =
+                new BufferedReader(new FileReader(input_files.get(i).sorted_file));
+            BufferedReader bf2 =
+                new BufferedReader(new FileReader(input_files.get(i + 1).sorted_file))) {
+          do_sort_in_while(bf1, bf2, arg);
+        }
       }
+
+      //      Files.createFile(Path.of(temp_result));
+    } else {
+      copy(input_files.get(0).sorted_file, arg.output_file);
     }
   }
 
-  static int find_max_value(ArrayList<ReadFile> input_files){
+  public static void do_sort_in_while(BufferedReader bf1, BufferedReader bf2, CommandArguments arg)
+      throws IOException {
+    boolean is_need_read_1 = true;
+    boolean is_need_read_2 = true;
+    StringBuilder partOne = new StringBuilder();
+    StringBuilder partTwo = new StringBuilder();
+    while (true) {
+      partOne = read_or_not(is_need_read_1, bf1, partOne);
+      partTwo = read_or_not(is_need_read_2, bf2, partTwo);
+      if (partOne == null && partTwo == null) break;
+      StringBuilder resultLine = new StringBuilder();
+      if (partOne == null) {
+        is_need_read_1 = false;
+        is_need_read_2 = true;
+        resultLine = new StringBuilder(partTwo);
+//        System.out.println(partTwo);
+      } else if (partTwo == null) {
+        is_need_read_1 = true;
+        is_need_read_2 = false;
+        resultLine = new StringBuilder(partOne);
+//        System.out.println(partOne);
+      } else {
+        if (arg.kind_of_data.equals("i")) {
+          if (arg.sort_method.equals("a")) {
+            if (Integer.parseInt(partOne.toString()) < Integer.parseInt(partTwo.toString())) {
+//              System.out.println(partOne);
+              resultLine = new StringBuilder(partOne);
+              is_need_read_1 = true;
+              is_need_read_2 = false;
+            } else {
+//              System.out.println(partTwo);
+              resultLine = new StringBuilder(partTwo);
+              is_need_read_1 = false;
+              is_need_read_2 = true;
+            }
+          }
+        }
+      }
+      System.out.println(resultLine);
+    }
+  }
+
+  public static StringBuilder read_or_not(boolean is_need_read, BufferedReader bf, StringBuilder sb)
+      throws IOException {
+    if (is_need_read) {
+      String str = bf.readLine();
+      if (str == null) {
+        sb = null;
+      } else {
+        sb = new StringBuilder(str);
+      }
+    }
+    return sb;
+  }
+
+  public static void copy(String sourcePath, String destinationPath) throws IOException {
+    Files.copy(Paths.get(sourcePath), new FileOutputStream(destinationPath));
+  }
+
+  static int find_max_value(ArrayList<ReadFile> input_files) {
     int result = 0;
     boolean is_start = true;
-    for (ReadFile next : input_files){
-      if(!is_start){
-        if(next.number_of_lines >= result){
-          result=next.number_of_lines;
+    for (ReadFile next : input_files) {
+      if (!is_start) {
+        if (next.number_of_lines >= result) {
+          result = next.number_of_lines;
         }
-      }else{
-        is_start=false;
-        result=next.number_of_lines;
+      } else {
+        is_start = false;
+        result = next.number_of_lines;
       }
     }
     return result;
@@ -181,18 +243,19 @@ public class Sort {
         do_sorted_file(input_file, arguments);
       }
       count_lines();
-
     }
 
-    void count_lines() throws IOException{
-      try(FileInputStream fis = new FileInputStream(this.sorted_file); BufferedReader br = new BufferedReader(new InputStreamReader(fis))){
+    void count_lines() throws IOException {
+      try (FileInputStream fis = new FileInputStream(this.sorted_file);
+          BufferedReader br = new BufferedReader(new InputStreamReader(fis))) {
         String line;
-//        System.out.println(12324234 + this.sorted_file);
+        //        System.out.println(12324234 + this.sorted_file);
         while ((line = br.readLine()) != null) {
           this.number_of_lines++;
         }
       }
     }
+
     boolean need_sort_int(BufferedReader br, CommandArguments arguments) throws IOException {
       boolean is_need_sort = false;
       String nowLine = "";
@@ -203,7 +266,8 @@ public class Sort {
         try {
           now_num = Integer.parseInt(nowLine);
         } catch (NumberFormatException e) {
-          continue;
+          is_need_sort = true;
+          break;
         }
 
         if (!is_start) {
