@@ -27,8 +27,8 @@ public class Sort {
     if (input_files.size() > 1) {
 
       int count = 0;
-      while(input_files.size() != 1) {
-        String temp_result = "./src/temp_"+count+".txt";
+      while (input_files.size() != 1) {
+        String temp_result = "./src/temp_" + count + ".txt";
         Files.createFile(Path.of(temp_result));
         try (BufferedReader bf1 =
                 new BufferedReader(new FileReader(input_files.get(0).sorted_file));
@@ -49,7 +49,8 @@ public class Sort {
     delete_file(input_files.get(0));
   }
 
-  public static void do_sort_in_while(BufferedReader bf1, BufferedReader bf2, CommandArguments arg, String temp_result)
+  public static void do_sort_in_while(
+      BufferedReader bf1, BufferedReader bf2, CommandArguments arg, String temp_result)
       throws IOException {
     boolean is_need_read_1 = true;
     boolean is_need_read_2 = true;
@@ -71,7 +72,17 @@ public class Sort {
       } else {
         if (arg.kind_of_data.equals("i")) {
           if (arg.sort_method.equals("a")) {
-            if (Integer.parseInt(partOne.toString()) < Integer.parseInt(partTwo.toString())) {
+            if (Integer.parseInt(partOne.toString()) <= Integer.parseInt(partTwo.toString())) {
+              resultLine = new StringBuilder(partOne);
+              is_need_read_1 = true;
+              is_need_read_2 = false;
+            } else {
+              resultLine = new StringBuilder(partTwo);
+              is_need_read_1 = false;
+              is_need_read_2 = true;
+            }
+          } else {
+            if (Integer.parseInt(partOne.toString()) > Integer.parseInt(partTwo.toString())) {
               resultLine = new StringBuilder(partOne);
               is_need_read_1 = true;
               is_need_read_2 = false;
@@ -84,8 +95,8 @@ public class Sort {
         }
       }
       try (FileWriter fw = new FileWriter(temp_result, true);
-           BufferedWriter bw = new BufferedWriter(fw);
-           PrintWriter out = new PrintWriter(bw)) {
+          BufferedWriter bw = new BufferedWriter(fw);
+          PrintWriter out = new PrintWriter(bw)) {
         out.println(resultLine.toString());
       }
     }
@@ -104,8 +115,8 @@ public class Sort {
     return sb;
   }
 
-  public static void delete_file(ReadFile file) throws IOException{
-    if(file.is_need_sort){
+  public static void delete_file(ReadFile file) throws IOException {
+    if (file.is_need_sort) {
       Files.delete(Paths.get(file.sorted_file));
     }
   }
@@ -113,23 +124,6 @@ public class Sort {
   public static void copy(String sourcePath, String destinationPath) throws IOException {
     Files.copy(Paths.get(sourcePath), new FileOutputStream(destinationPath));
   }
-
-  static int find_max_value(ArrayList<ReadFile> input_files) {
-    int result = 0;
-    boolean is_start = true;
-    for (ReadFile next : input_files) {
-      if (!is_start) {
-        if (next.number_of_lines >= result) {
-          result = next.number_of_lines;
-        }
-      } else {
-        is_start = false;
-        result = next.number_of_lines;
-      }
-    }
-    return result;
-  }
-
   public static class CommandArguments {
     boolean is_arg_valid = true;
     String sort_method = "d";
@@ -220,7 +214,6 @@ public class Sort {
     boolean is_need_sort = false;
     String sorted_file = "";
     ArrayList<Integer> content_of_file = new ArrayList<Integer>();
-    //        String dirName = "C:\\Users\\Пк\\IdeaProjects\\123\\Sort\\src\\directory";
     String dirName = "./directory";
 
     public ReadFile(String input_file, CommandArguments arguments) {
@@ -256,7 +249,6 @@ public class Sort {
         create_files_int(input_file);
         do_sorted_file(input_file, arguments);
       }
-      count_lines();
     }
 
     void count_lines() throws IOException {
@@ -348,15 +340,13 @@ public class Sort {
       try (FileInputStream fstream = new FileInputStream(input_file)) {
         try (BufferedReader br = new BufferedReader(new InputStreamReader(fstream))) {
           while ((nowLine = br.readLine()) != null) {
-            int now_num = 0;
             try {
-              now_num = Integer.parseInt(nowLine);
+              Integer.parseInt(nowLine);
             } catch (NumberFormatException e) {
               continue;
             }
 
             String next_filename = FILE_NAME + counter_files + ".txt";
-            //                        System.out.println(next_filename);
             counter_files++;
             Files.createFile(Path.of(next_filename));
 
@@ -383,45 +373,94 @@ public class Sort {
           files_in_folder.add(file.getAbsolutePath());
         }
       }
+      while (files_in_folder.size() != 0) {
+        int file_to_delete = 0;
+        int min_max = 0;
+        boolean is_start = true;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < files_in_folder.size(); i++) {
+          Do_sort_in_file sort =
+              new Do_sort_in_file(files_in_folder, arguments, i, is_start, min_max, sb, file_to_delete);
+          sb = sort.sb;
+          file_to_delete = sort.file_to_delete;
+          min_max = sort.min_max;
+          is_start = sort.is_start;
+        }
+        System.out.println(min_max + " "+ this.sorted_file);
+        write_to_file(min_max, sb.toString(), arguments);
+        files_in_folder.remove(file_to_delete);
+      }
+      deleteDir(folder);
+    }
 
-      if (arguments.kind_of_data.equals("i")) {
-        if (arguments.sort_method.equals("a")) {
+    void write_to_file(int min_max_num, String min_max_str, CommandArguments arguments)
+        throws IOException {
+      String to_write = min_max_num + "";
+      if (arguments.kind_of_data.equals("s")) {
+        to_write = min_max_str;
+      }
+      try (FileWriter fw = new FileWriter(this.sorted_file, true);
+          BufferedWriter bw = new BufferedWriter(fw);
+          PrintWriter out = new PrintWriter(bw)) {
+        out.println(to_write);
+      }
+    }
 
-          while (files_in_folder.size() != 0) {
-            int file_to_delete = 0;
-            int min = 0;
-            boolean is_start = true;
-            int current_number = 0;
-            for (int i = 0; i < files_in_folder.size(); i++) {
-              try (FileInputStream fstream = new FileInputStream(files_in_folder.get(i))) {
-                try (BufferedReader br = new BufferedReader(new InputStreamReader(fstream))) {
-                  String nextLine = "";
-                  while ((nextLine = br.readLine()) != null) {
-                    current_number = Integer.parseInt(nextLine);
-                    if (!is_start) {
-                      if (current_number <= min) {
-                        min = current_number;
-                        file_to_delete = i;
-                      }
+    public static class Do_sort_in_file {
+      int min_max;
+      boolean is_start;
+      int file_to_delete;
+      StringBuilder sb;
+
+      public Do_sort_in_file(
+          ArrayList<String> files_in_folder,
+          CommandArguments arguments,
+          int i,
+          boolean is_start,
+          int min_max,
+          StringBuilder sb, int file_to_delete)
+          throws IOException {
+        this.min_max = min_max;
+        this.is_start = is_start;
+        this.sb = sb;
+        this.file_to_delete=file_to_delete;
+        do_sort_in_input_file(files_in_folder, arguments, i);
+      }
+
+      void do_sort_in_input_file(
+          ArrayList<String> files_in_folder, CommandArguments arguments, int i) throws IOException {
+        try (FileInputStream fstream = new FileInputStream(files_in_folder.get(i))) {
+          try (BufferedReader br = new BufferedReader(new InputStreamReader(fstream))) {
+            String nextLine = "";
+            while ((nextLine = br.readLine()) != null) {
+              int current_number = 0;
+              if (arguments.kind_of_data.equals("i")) {
+                current_number = Integer.parseInt(nextLine);
+                if (!this.is_start) {
+                  if (arguments.sort_method.equals("a")) {
+                    if (current_number <= this.min_max) {
+                      this.min_max = current_number;
+                      this.file_to_delete = i;
                     }
-                    if (is_start) {
-                      is_start = false;
-                      min = current_number;
+                  } else {
+                    if (current_number >= this.min_max) {
+                      this.min_max = current_number;
+                      this.file_to_delete = i;
                     }
                   }
                 }
+              } else {
+
+              }
+              if (this.is_start) {
+                this.is_start = false;
+                this.min_max = current_number;
+                this.sb = new StringBuilder(nextLine);
               }
             }
-            try (FileWriter fw = new FileWriter(this.sorted_file, true);
-                BufferedWriter bw = new BufferedWriter(fw);
-                PrintWriter out = new PrintWriter(bw)) {
-              out.println(min + "");
-            }
-            files_in_folder.remove(file_to_delete);
           }
         }
       }
-      deleteDir(folder);
     }
 
     public static void deleteDir(File dirFile) {
@@ -435,3 +474,58 @@ public class Sort {
     }
   }
 }
+
+//  void do_sorted_file(String input_file, CommandArguments arguments) throws IOException {
+//    ArrayList<String> files_in_folder = new ArrayList<>();
+//    String[] fileArray = input_file.split("\\.");
+//    this.sorted_file = fileArray[fileArray.length - 2] + "_temp.txt";
+//    Files.createFile(Path.of(this.sorted_file));
+//    File folder = new File("./src/temp_directory");
+//    File[] listOfFiles = folder.listFiles();
+//
+//    for (File file : listOfFiles) {
+//      if (file.isFile()) {
+//        files_in_folder.add(file.getAbsolutePath());
+//      }
+//    }
+//
+//    while (files_in_folder.size() != 0) {
+//      int file_to_delete = 0;
+//      int min_max = 0;
+//      boolean is_start = true;
+//
+//      for (int i = 0; i < files_in_folder.size(); i++) {
+//        try (FileInputStream fstream = new FileInputStream(files_in_folder.get(i))) {
+//          try (BufferedReader br = new BufferedReader(new InputStreamReader(fstream))) {
+//            String nextLine = "";
+//            while ((nextLine = br.readLine()) != null) {
+//              int current_number = 0;
+//              if (arguments.kind_of_data.equals("i")) {
+//                if (arguments.sort_method.equals("a")) {
+//                  current_number = Integer.parseInt(nextLine);
+//                  if (!is_start) {
+//                    if (current_number <= min_max) {
+//                      min_max = current_number;
+//                      file_to_delete = i;
+//                    }
+//                  }
+//                }
+//              }
+//              if (is_start) {
+//                is_start = false;
+//                min_max = current_number;
+//              }
+//            }
+//          }
+//        }
+//      }
+//      try (FileWriter fw = new FileWriter(this.sorted_file, true);
+//           BufferedWriter bw = new BufferedWriter(fw);
+//           PrintWriter out = new PrintWriter(bw)) {
+//        out.println(min_max + "");
+//      }
+//      files_in_folder.remove(file_to_delete);
+//    }
+//
+//    deleteDir(folder);
+//  }
