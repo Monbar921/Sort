@@ -16,9 +16,6 @@ public class Sort {
           }
           merge_sort(input_files, arg);
         }
-
-        System.out.println(arg.is_arg_valid);
-        System.out.println(arg.sort_method + " " + arg.kind_of_data + " " + arg.output_file);
   }
 
   public static class CommandArguments {
@@ -118,7 +115,7 @@ public class Sort {
     if (input_files.size() > 1) {
       int count = 0;
       while (input_files.size() != 1) {
-        String temp_result = "./src/temp_" + count + ".txt";
+        String temp_result = "./temp_" + count + ".txt";
         Files.createFile(Path.of(temp_result));
         try (BufferedReader bf1 =
                 new BufferedReader(new FileReader(input_files.get(0).sorted_file));
@@ -372,7 +369,7 @@ public class Sort {
 
     void create_files(String input_file, CommandArguments arguments) throws IOException {
       String nowLine = "";
-      String FILE_NAME = "./src/temp_directory/";
+      String FILE_NAME = "./temp_directory/";
       int counter_files = 0;
       try (FileInputStream fstream = new FileInputStream(input_file)) {
         try (BufferedReader br = new BufferedReader(new InputStreamReader(fstream))) {
@@ -402,7 +399,7 @@ public class Sort {
       String[] fileArray = input_file.split("\\.");
       this.sorted_file = fileArray[fileArray.length - 2] + "_temp.txt";
       Files.createFile(Path.of(this.sorted_file));
-      File folder = new File("./src/temp_directory");
+      File folder = new File("./temp_directory");
       File[] listOfFiles = folder.listFiles();
       for (File file : listOfFiles) {
         if (file.isFile()) {
