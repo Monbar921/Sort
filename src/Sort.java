@@ -25,24 +25,31 @@ public class Sort {
       throws IOException {
 
     if (input_files.size() > 1) {
-      String temp_result = "./src/temp_";
-      for (int i = 0; i < input_files.size() - 1; i++) {
 
+      int count = 0;
+      while(input_files.size() != 1) {
+        String temp_result = "./src/temp_"+count+".txt";
+        Files.createFile(Path.of(temp_result));
         try (BufferedReader bf1 =
-                new BufferedReader(new FileReader(input_files.get(i).sorted_file));
+                new BufferedReader(new FileReader(input_files.get(0).sorted_file));
             BufferedReader bf2 =
-                new BufferedReader(new FileReader(input_files.get(i + 1).sorted_file))) {
-          do_sort_in_while(bf1, bf2, arg);
+                new BufferedReader(new FileReader(input_files.get(1).sorted_file))) {
+          do_sort_in_while(bf1, bf2, arg, temp_result);
         }
+        delete_file(input_files.get(0));
+        delete_file(input_files.get(1));
+        input_files.remove(0);
+        input_files.remove(0);
+        input_files.add(0, new ReadFile(temp_result, arg));
+        input_files.get(0).is_need_sort = true;
+        count++;
       }
-
-      //      Files.createFile(Path.of(temp_result));
-    } else {
-      copy(input_files.get(0).sorted_file, arg.output_file);
     }
+    copy(input_files.get(0).sorted_file, arg.output_file);
+    delete_file(input_files.get(0));
   }
 
-  public static void do_sort_in_while(BufferedReader bf1, BufferedReader bf2, CommandArguments arg)
+  public static void do_sort_in_while(BufferedReader bf1, BufferedReader bf2, CommandArguments arg, String temp_result)
       throws IOException {
     boolean is_need_read_1 = true;
     boolean is_need_read_2 = true;
@@ -57,22 +64,18 @@ public class Sort {
         is_need_read_1 = false;
         is_need_read_2 = true;
         resultLine = new StringBuilder(partTwo);
-//        System.out.println(partTwo);
       } else if (partTwo == null) {
         is_need_read_1 = true;
         is_need_read_2 = false;
         resultLine = new StringBuilder(partOne);
-//        System.out.println(partOne);
       } else {
         if (arg.kind_of_data.equals("i")) {
           if (arg.sort_method.equals("a")) {
             if (Integer.parseInt(partOne.toString()) < Integer.parseInt(partTwo.toString())) {
-//              System.out.println(partOne);
               resultLine = new StringBuilder(partOne);
               is_need_read_1 = true;
               is_need_read_2 = false;
             } else {
-//              System.out.println(partTwo);
               resultLine = new StringBuilder(partTwo);
               is_need_read_1 = false;
               is_need_read_2 = true;
@@ -80,7 +83,11 @@ public class Sort {
           }
         }
       }
-      System.out.println(resultLine);
+      try (FileWriter fw = new FileWriter(temp_result, true);
+           BufferedWriter bw = new BufferedWriter(fw);
+           PrintWriter out = new PrintWriter(bw)) {
+        out.println(resultLine.toString());
+      }
     }
   }
 
@@ -95,6 +102,12 @@ public class Sort {
       }
     }
     return sb;
+  }
+
+  public static void delete_file(ReadFile file) throws IOException{
+    if(file.is_need_sort){
+      Files.delete(Paths.get(file.sorted_file));
+    }
   }
 
   public static void copy(String sourcePath, String destinationPath) throws IOException {
@@ -204,6 +217,7 @@ public class Sort {
 
   public static class ReadFile {
     int number_of_lines;
+    boolean is_need_sort = false;
     String sorted_file = "";
     ArrayList<Integer> content_of_file = new ArrayList<Integer>();
     //        String dirName = "C:\\Users\\Пк\\IdeaProjects\\123\\Sort\\src\\directory";
@@ -219,15 +233,15 @@ public class Sort {
     }
 
     void check_file_on_correct(String input_file, CommandArguments arguments) throws IOException {
-      boolean is_need_sort = false;
+
       try (FileInputStream fstream = new FileInputStream(input_file)) {
         try (BufferedReader br = new BufferedReader(new InputStreamReader(fstream))) {
 
           if (arguments.kind_of_data.equals("i")) {
-            is_need_sort = need_sort_int(br, arguments);
+            this.is_need_sort = need_sort_int(br, arguments);
 
           } else {
-            is_need_sort = need_sort_str(br, arguments);
+            this.is_need_sort = need_sort_str(br, arguments);
           }
         }
       }
